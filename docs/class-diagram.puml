@@ -1,0 +1,80 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName Arial
+skinparam classFontSize 18
+skinparam classAttributeFontSize 16
+skinparam classFontStyle bold
+skinparam classBackgroundColor White
+skinparam classBorderColor #4F5651
+skinparam ArrowColor #4F5651
+skinparam ArrowThickness 1.3
+skinparam roundcorner 0
+skinparam nodesep 40
+skinparam ranksep 45
+hide circle
+
+class Main {
+  +{static} main(args : String[]) : void
+}
+
+class OrderFacade {
+  -inventory : InventoryService
+  -payment : PaymentProcessor
+  -shipping : ShippingService
+  -notification : NotificationService
+  -orders : Map<String, OrderDetails>
+  --
+  +placeOrder(cart : List<CartItem>, customer : Customer) : Order
+  +cancelOrder(orderId : String) : Order
+  -rollback(orderId : String) : void
+}
+
+class InventoryService {
+  -stock : Map<String, Integer>
+  -prices : Map<String, BigDecimal>
+  -reservations : Map<String, Map<String, Integer>>
+  --
+  +reserve(orderId : String, items : List<CartItem>) : BigDecimal
+  +release(orderId : String) : void
+  +getAvailableStock(productId : String) : int
+}
+
+class PaymentProcessor {
+  -charges : Map<String, BigDecimal>
+  --
+  +charge(orderId : String, amount : BigDecimal, paymentToken : String) : void
+  +refund(orderId : String) : void
+  +isCharged(orderId : String) : boolean
+}
+
+class ShippingService {
+  -shipments : Map<String, String>
+  --
+  +arrange(orderId : String, customer : Customer) : String
+  +cancel(orderId : String) : void
+  +hasShipment(orderId : String) : boolean
+}
+
+class NotificationService {
+  -outbox : List<String>
+  -sentEvents : Set<String>
+  --
+  +notifyCustomer(order : Order, customer : Customer) : void
+  +getMessages() : List<String>
+}
+
+Main .right.> OrderFacade
+OrderFacade --> InventoryService
+OrderFacade --> PaymentProcessor
+OrderFacade --> ShippingService
+OrderFacade --> NotificationService
+
+InventoryService -[hidden]right-> PaymentProcessor
+InventoryService -[hidden]down-> ShippingService
+PaymentProcessor -[hidden]down-> NotificationService
+ShippingService -[hidden]right-> NotificationService
+
+@enduml
